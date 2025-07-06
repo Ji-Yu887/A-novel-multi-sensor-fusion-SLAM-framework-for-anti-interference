@@ -68,3 +68,6 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+Part of the noise filtering module is adapted from:
+https://github.com/ch-geo/lidar_noise_filtering by ch-geo (MIT License).
