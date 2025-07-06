@@ -33,10 +33,11 @@ def generate_launch_description():
     }
 
     remappings=[
-          ('rgb/image', '/camera/color/image_raw'),
+          ('rgb/image', '/camera/color/image_clahe'),
           ('rgb/camera_info', '/camera/color/camera_info'),
           ('depth/image', '/camera/depth/image_raw'),
-          ('odom', '/odom')
+          ('odom', '/odom'),
+          ('scan', '/filtered_scans')
         ]
 
     return LaunchDescription([
