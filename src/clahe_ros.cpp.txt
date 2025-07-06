@@ -1,0 +1,66 @@
+#include "clahe_ros/clahe_ros.h"
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <stdexcept>
+#include <memory>
+#include <vector>
+#include <functional>
+
+using std::placeholders::_1;
+
+ClaheRos::ClaheRos(const rclcpp::NodeOptions & options)
+: Node("clahe_ros", options)
+{
+  this->declare_parameter<double>("clahe_clip_limit", 4.0);
+  this->declare_parameter<int>("clahe_grid_size", 8);
+
+  clahe_clip_limit_ = this->get_parameter("clahe_clip_limit").as_double();
+  clahe_grid_size_ = this->get_parameter("clahe_grid_size").as_int();
+
+  RCLCPP_INFO(this->get_logger(), "CLAHE params: clip_limit=%.2f, grid_size=%d", clahe_clip_limit_, clahe_grid_size_);
+}
+
+void ClaheRos::init_image_transport(std::shared_ptr<ClaheRos> shared_this)
+{
+  it_ = std::make_shared<image_transport::ImageTransport>(shared_this);
+  image_pub_ = it_->advertise("equalized_image", 5);
+  image_sub_ = it_->subscribe("/camera/color/image_raw", 5, std::bind(&ClaheRos::imageCb, this, _1));
+}
+
+void ClaheRos::imageCb(const sensor_msgs::msg::Image::ConstSharedPtr msg)
+{
+  try {
+    auto cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    if (!cv_ptr || cv_ptr->image.empty()) {
+      RCLCPP_ERROR(this->get_logger(), "cv_bridge conversion failed or image empty");
+      return;
+    }
+
+    cv::Mat lab_image;
+    cv::cvtColor(cv_ptr->image, lab_image, cv::COLOR_BGR2Lab);
+
+    std::vector<cv::Mat> lab_planes(3);
+    cv::split(lab_image, lab_planes);
+
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+    clahe->setClipLimit(clahe_clip_limit_);
+    clahe->setTilesGridSize(cv::Size(clahe_grid_size_, clahe_grid_size_));
+
+    cv::Mat dst = cv::Mat::zeros(lab_planes[0].size(), lab_planes[0].type());
+    clahe->apply(lab_planes[0], dst);
+
+    dst.copyTo(lab_planes[0]);
+    cv::merge(lab_planes, lab_image);
+
+    cv::Mat image_clahe;
+    cv::cvtColor(lab_image, image_clahe, cv::COLOR_Lab2BGR);
+
+    auto out_msg = cv_bridge::CvImage(msg->header, sensor_msgs::image_encodings::BGR8, image_clahe).toImageMsg();
+    image_pub_.publish(out_msg);
+
+  } catch (const cv::Exception & e) {
+    RCLCPP_ERROR(this->get_logger(), "OpenCV exception: %s", e.what());
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(this->get_logger(), "Exception: %s", e.what());
+  }
+}

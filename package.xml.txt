@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>clahe_ros</name>
+  <version>0.0.0</version>
+  <description>Contrast Limited Adaptive Histogram Equalization (CLAHE) for ROS2</description>
+  <maintainer email="nkhedekar@nevada.unr.edu">Nikhil Khedekar</maintainer>
+  <license>MIT</license>
+  
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  
+  <!-- 明确指定依赖类型 -->
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>std_msgs</depend>
+  
+  <!-- 添加OpenCV依赖（必须） -->
+  <depend>opencv</depend>
+  
+  <!-- 添加launch文件依赖（推荐） -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

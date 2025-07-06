@@ -1,0 +1,26 @@
+#ifndef CLAHE_ROS_H
+#define CLAHE_ROS_H
+
+#include "rclcpp/rclcpp.hpp"
+#include <image_transport/image_transport.hpp>
+#include <sensor_msgs/msg/image.hpp>
+
+class ClaheRos : public rclcpp::Node
+{
+public:
+  explicit ClaheRos(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+
+  void init_image_transport(std::shared_ptr<ClaheRos> shared_this);
+
+private:
+  void imageCb(const sensor_msgs::msg::Image::ConstSharedPtr msg);
+
+  double clahe_clip_limit_;
+  int clahe_grid_size_;
+
+  std::shared_ptr<image_transport::ImageTransport> it_;
+  image_transport::Publisher image_pub_;
+  image_transport::Subscriber image_sub_;
+};
+
+#endif  // CLAHE_ROS_H
