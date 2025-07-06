@@ -1,0 +1,70 @@
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import LaserScan
+from statistics import median
+
+class NoiseFilteringNode(Node):
+    def __init__(self):
+        super().__init__('noise_filtering')
+        self.publisher_ = self.create_publisher(LaserScan, '/filtered_scans', 10)
+        self.subscription = self.create_subscription(
+            LaserScan,
+            '/scan',
+            self.listener_callback,
+            10)
+
+    def range_filter(self, scan, min_val, max_val):
+        index = []
+        for i, ray in enumerate(scan):
+            if ray < min_val or ray > max_val:
+                scan[i] = None
+            else:
+                index.append(i)
+        return scan, index
+
+    def median_deviation(self, scan, window):
+        result = []
+        scan_size = len(scan)
+        windows_num = scan_size // window
+        mod = scan_size % window
+
+        for i in range(windows_num):
+            temp = scan[window*i : window*(i+1)]
+            med = median(temp)
+            for j, elem in enumerate(temp):
+                if (med - elem)/med*100 > 20:
+                    temp[j] = 10
+            result.extend(temp)
+
+        if mod != 0:
+            temp = scan[-mod:]
+            med = median(temp)
+            for j, elem in enumerate(temp):
+                if (med - elem)/med*100 > 20:
+                    temp[j] = 10
+            result.extend(temp)
+
+        return result
+
+    def listener_callback(self, msg):
+        scan = list(msg.ranges)
+        scan, index = self.range_filter(scan, msg.range_min, 3.0)
+
+        not_none = [scan[i] for i in index if scan[i] is not None]
+        filtered = self.median_deviation(not_none, 10)
+
+        for i in index:
+            scan[i] = not_none.pop(0)
+        msg.ranges = [float(r) if r is not None else float('inf') for r in scan]
+
+        self.publisher_.publish(msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = NoiseFilteringNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
