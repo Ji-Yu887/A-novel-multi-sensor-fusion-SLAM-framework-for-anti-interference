@@ -10,7 +10,7 @@ For code description, we provide the code of clahe, lidar noise and timestamp sy
 
 The recommendation for researchers who want to reproduce our paper is to change the topic mapping in the RGB-D configuration file in the RTAB-Map project and any configuration file involving sensors to the enhanced topic names.
 
-Environment requirements: ROS2 Foxy + Ubuntu 20.04 + OpenCV4.5
+Environment requirements: ROS2 Foxy + Ubuntu 20.04 + OpenCV4.5 + RTAB-Map_ros
 
 ## Acknowledgements
 Part of the LiDAR filtering module is adapted from: [ch-geo/lidar_noise_filtering](https://github.com/ch-geo/lidar_noise_filtering) (MIT License).
